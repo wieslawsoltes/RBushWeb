@@ -1,0 +1,15 @@
+RBushWeb is a JavaScript port of viceroypenguin/RBush.
+Upstream repository: https://github.com/viceroypenguin/RBush
+Upstream revision: 101b6fb915215d9d30294a1178fe09ebd6929d73
+Copyright (c) 2017 viceroypenguin. MIT License, reproduced in LICENSE.
+
+The upstream project credits Vladimir Agafonkin's JavaScript RBush as its
+algorithmic origin: https://github.com/mourner/rbush (MIT).
+RBushWeb preserves the C# project's public API conventions and test fixtures.
+
+Release infrastructure is adapted from ReactiveWeb (MIT):
+https://github.com/wieslawsoltes/ReactiveWeb
+Copyright (c) 2026 ReactiveWeb contributors.
+
+JavaScript port, web sample, and additional tests:
+Copyright (c) 2026 RBushWeb contributors. MIT License.

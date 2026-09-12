@@ -1,0 +1,130 @@
+name: CI and distribution
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        node: [22, 24]
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: ${{ matrix.node }}
+          cache: npm
+      - run: npm ci
+      - run: npm run check
+      - run: npm run test:package
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test:browser
+      - name: Record benchmark observations
+        if: matrix.node == 24
+        run: npm run --silent benchmark > benchmark.json
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: verification-node-${{ matrix.node }}
+          path: |
+            test-results/
+            benchmark.json
+          if-no-files-found: ignore
+
+  package:
+    needs: verify
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+      - run: npm run build:demo
+      - run: npm pack --ignore-scripts
+      - name: Archive standalone modules and showcase
+        shell: bash
+        run: |
+          tar -czf rbushweb-browser.tar.gz -C dist .
+          tar -czf rbushweb-showcase.tar.gz -C site .
+          sha256sum *.tgz *.tar.gz > SHA256SUMS.txt
+      - uses: actions/upload-artifact@v7
+        with:
+          name: distribution
+          path: |
+            *.tgz
+            *.tar.gz
+            SHA256SUMS.txt
+          if-no-files-found: error
+
+  release:
+    needs: package
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    outputs:
+      tag: ${{ steps.release.outputs.tag }}
+      publish: ${{ steps.release.outputs.publish }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/download-artifact@v8
+        with:
+          name: distribution
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          package-manager-cache: false
+      - name: Publish versioned release and assets
+        id: release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        shell: bash
+        run: |
+          package_version=$(node -p 'JSON.parse(require("fs").readFileSync("package.json", "utf8")).version')
+          [[ "$package_version" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9.-]+)?$ ]]
+          release_tag="v$package_version"
+          sha256sum --check SHA256SUMS.txt
+          if gh release view "$release_tag" >/dev/null 2>&1; then
+            echo "Release already exists; immutable assets retained."
+          else
+            gh release create "$release_tag" --target "$GITHUB_SHA" --title "RBushWeb $package_version" --notes-file docs/release-notes.md *.tgz *.tar.gz SHA256SUMS.txt
+          fi
+          echo "tag=$release_tag" >> "$GITHUB_OUTPUT"
+          git fetch --no-tags origin "refs/tags/$release_tag:refs/tags/$release_tag"
+          release_commit=$(git rev-list -n 1 "$release_tag")
+          if [[ "$release_commit" == "$GITHUB_SHA" ]]; then
+            echo "publish=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "publish=false" >> "$GITHUB_OUTPUT"
+            echo "Existing release belongs to another commit; npm publication skipped."
+          fi
+
+  npm:
+    needs: release
+    if: needs.release.outputs.publish == 'true'
+    permissions:
+      contents: read
+      id-token: write
+    uses: ./.github/workflows/npm-publish.yml
+    with:
+      tag: ${{ needs.release.outputs.tag }}
+      expected_sha: ${{ github.sha }}
+      dist_tag: latest
+    secrets:
+      NPM_TOKEN: ${{ secrets.NPM_TOKEN }}

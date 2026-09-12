@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <meta name="description" content="Explore RBushWeb: a fast, reusable spatial index with the RBush .NET API, bulk loading, envelope queries, nearest neighbors, and live updates.">
+  <title>RBushWeb · Spatial index lab</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%23e66345'/%3E%3Cpath d='M8 8h10v10H8zm7 7h9v9h-9' fill='none' stroke='white' stroke-width='2'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="./style.css">
+  <script type="module" src="./app.js"></script>
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="./" aria-label="RBushWeb home"><span class="brand-icon"><i></i><i></i></span><strong>RBush<span>Web</span></strong></a>
+    <span class="header-divider"></span><span class="product-name">SPATIAL INDEX LAB</span>
+    <nav aria-label="Project"><a href="https://github.com/wieslawsoltes/RBushWeb" target="_blank" rel="noreferrer">Source <span aria-hidden="true">↗</span></a><button id="theme" class="icon-button" aria-label="Switch to dark theme" title="Switch theme">◐</button></nav>
+  </header>
+  <main>
+    <section class="intro"><div><p class="eyebrow"><span class="live-dot"></span> INTERACTIVE PLAYGROUND</p><h1>A little structure.<br class="mobile-break"> A lot of possibility.</h1><p>Explore spatial data with an R-tree. Find the right things, faster.</p></div><div class="intro-tag"><span class="tag-icon">⌘</span><div><b>.NET familiarity. Web performance.</b><small>Plain JavaScript · zero runtime dependencies</small></div></div></section>
+    <section class="metrics" aria-label="Live index statistics">
+      <div class="metric"><span class="metric-label">INDEXED ITEMS</span><strong id="count">0</strong><small id="dataset-description">Uniform rectangles</small></div>
+      <div class="metric"><span class="metric-label">TREE HEIGHT</span><strong id="height">1<span> levels</span></strong><small id="node-count">1 node</small></div>
+      <div class="metric"><span class="metric-label">BUILD TIME</span><strong id="build-time">—<span> ms</span></strong><small id="build-method">Bulk loading</small></div>
+      <div class="metric query-metric"><span class="metric-label">LAST QUERY</span><strong id="query-time">—<span> ms</span></strong><small id="query-summary">Ready to explore</small></div>
+    </section>
+    <div class="workspace">
+      <aside class="panel settings" aria-label="Dataset and query settings">
+        <div class="panel-heading"><h2>Configure your space</h2><span class="step-label">01</span></div>
+        <div class="settings-section"><h3>DATASET</h3>
+          <label for="dataset-size">Number of items</label><select id="dataset-size"><option value="100">100 items</option><option value="1000">1,000 items</option><option value="10000" selected>10,000 items</option><option value="50000">50,000 items</option><option value="100000">100,000 items</option></select>
+          <div class="field-pair"><div><label for="shape">Geometry</label><select id="shape"><option value="rectangles">Rectangles</option><option value="points">Points</option></select></div><div><label for="distribution">Distribution</label><select id="distribution"><option value="uniform">Uniform</option><option value="clusters">Clusters</option><option value="grid">Grid</option></select></div></div>
+          <div class="field-pair"><div><label for="capacity">Node capacity</label><input id="capacity" type="number" value="9" min="4" max="128" step="1"></div><div><label for="seed">Random seed</label><input id="seed" type="number" value="42" min="0" max="4294967295" step="1"></div></div>
+          <button class="primary-button full-width" id="generate"><span aria-hidden="true">↻</span> Generate & bulk load</button>
+          <button class="secondary-button full-width" id="benchmark">Compare with insertion <span aria-hidden="true">↗</span></button>
+          <div id="benchmark-result" class="benchmark-result" hidden></div>
+        </div>
+        <div class="settings-section"><h3>NEAREST NEIGHBORS</h3><div class="field-pair"><div><label for="neighbors">Neighbors (k)</label><input id="neighbors" type="number" value="12" min="0" max="100000" step="1"></div><div><label for="radius">Max distance</label><input id="radius" type="number" min="0" max="2000" step="1" placeholder="Unlimited"></div></div><label for="category">Category filter</label><select id="category"><option value="all">All categories</option><option value="coral">Coral only</option><option value="teal">Teal only</option><option value="indigo">Indigo only</option></select><p class="field-help">Distance is measured to an item's envelope. Set k to 0 to return every match.</p></div>
+        <div class="settings-section"><h3>VIEW OPTIONS</h3><label class="toggle-row"><span>Show tree envelopes</span><input id="show-tree" type="checkbox" role="switch"><span class="switch"></span></label><label for="tree-level">Envelope depth <output id="tree-level-value">All</output></label><select id="tree-level"><option value="all">All branches (max 1,200)</option><option value="0">Root only</option><option value="1">Depth 1</option><option value="2">Depth 2</option><option value="3">Depth 3</option></select><label class="toggle-row"><span>Verify against brute force</span><input id="verify" type="checkbox" role="switch" checked><span class="switch"></span></label></div>
+        <div class="settings-section data-actions"><h3>YOUR DATA</h3><div class="field-pair"><button class="secondary-button" id="import">Import JSON</button><button class="secondary-button" id="export">Export JSON</button></div><input id="import-file" type="file" accept=".json,application/json" hidden><button class="text-button danger" id="clear">Clear index</button></div>
+      </aside>
+      <section class="panel spatial-panel" aria-label="Interactive spatial index">
+        <div class="viewport-heading"><div><span class="live-dot"></span><h2>Spatial canvas</h2><span class="coordinate-badge">1,000 × 700 units</span></div><button id="fit" class="text-button" title="Fit all indexed items in view">Fit view <span aria-hidden="true">⤢</span></button></div>
+        <div class="canvas-toolbar"><div class="mode-buttons" role="group" aria-label="Interaction mode"><button data-mode="query" class="selected" aria-pressed="true" title="Drag to query (Q)"><span aria-hidden="true">▧</span> Query</button><button data-mode="nearest" aria-pressed="false" title="Click to find nearest neighbors (N)"><span aria-hidden="true">◎</span> Nearest</button><button data-mode="insert" aria-pressed="false" title="Click to add item (I)"><span aria-hidden="true">＋</span> Insert</button><button data-mode="move" aria-pressed="false" title="Drag to move an item (M)"><span aria-hidden="true">✥</span> Move</button></div><button id="search-all" class="text-button">Select all</button></div>
+        <div class="canvas-wrap" id="canvas-wrap"><canvas id="canvas" tabindex="0" role="img" aria-label="Spatial dataset. Use the query coordinates below to perform keyboard-accessible queries."></canvas><div class="canvas-axis y-axis">Y</div><div class="canvas-axis x-axis">X</div><div id="canvas-empty" class="canvas-empty" hidden><strong>An open space.</strong><p>Generate a dataset or choose Insert to add your first item.</p></div><div class="canvas-instruction" id="canvas-instruction"><span aria-hidden="true">↖</span> Drag a rectangle to discover what's inside</div><div class="canvas-scale" id="canvas-scale">100 units</div></div>
+        <div class="canvas-status"><span><i class="legend-dot coral"></i> Coral <i class="legend-dot teal"></i> Teal <i class="legend-dot indigo"></i> Indigo</span><span id="pointer-coords">x: — &nbsp; y: —</span></div>
+        <div class="query-controls"><div class="query-controls-title"><h3>QUERY BOUNDS</h3><span id="query-kind">Envelope intersection</span></div><div class="bounds-fields"><div><label for="min-x">Min X / center X</label><input id="min-x" type="number" value="300" step="any"></div><div><label for="min-y">Min Y / center Y</label><input id="min-y" type="number" value="200" step="any"></div><div><label for="max-x">Max X</label><input id="max-x" type="number" value="650" step="any"></div><div><label for="max-y">Max Y</label><input id="max-y" type="number" value="450" step="any"></div><button id="run-query" class="primary-button">Run query <span aria-hidden="true">→</span></button></div></div>
+        <div class="code-panel"><div><span class="code-label">THE API, IN ACTION</span><button id="copy-code" class="text-button">Copy code</button></div><pre><code id="api-code"></code></pre><details class="recipes"><summary>Explore more API examples</summary><div class="recipe-controls"><select id="recipe" aria-label="API example"><option value="geometry">Envelope geometry helpers</option><option value="comparer">Custom equality & duplicates</option><option value="snapshot">Serialize & restore this tree</option><option value="aliases">JavaScript aliases & iteration</option></select><button id="run-recipe" class="secondary-button">Run example</button></div><pre id="recipe-output" aria-live="polite"></pre></details></div>
+      </section>
+      <aside class="panel results-panel" aria-label="Query results">
+        <div class="panel-heading"><h2>Results</h2><span class="result-badge" id="result-count">0</span></div>
+        <div class="result-stats"><div><span>Index search</span><b id="result-time">—</b></div><div><span>Linear scan</span><b id="brute-time">—</b></div><div id="verification" class="verification">Run a query to compare results</div></div>
+        <div class="result-list-heading"><span>ITEM / CATEGORY</span><span id="result-column">BOUNDS</span></div><div id="result-list" class="result-list" role="list" aria-label="Matching items"></div><p class="result-limit" id="result-limit"></p>
+        <div class="inspector" id="inspector" hidden><div class="inspector-heading"><h3>ITEM DETAILS</h3><button id="close-inspector" class="icon-button" aria-label="Close item details">×</button></div><pre id="item-details"></pre><div class="field-pair"><button id="focus-item" class="secondary-button">Focus item</button><button id="delete-item" class="secondary-button danger">Delete item</button></div></div>
+        <div class="result-footer"><span class="key">Q</span> query <span class="key">N</span> nearest <span class="key">I</span> insert <span class="key">M</span> move<br>Scroll to zoom · Space + drag to pan</div>
+      </aside>
+    </div>
+    <footer class="footer"><p><b>Built for the things that need to be found.</b><span>Bulk loading · Spatial search · Nearest neighbors · Live updates</span></p><a href="https://github.com/wieslawsoltes/RBushWeb#readme" target="_blank" rel="noreferrer">Explore the documentation ↗</a></footer>
+  </main>
+  <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+</body>
+</html>
