@@ -85,6 +85,19 @@ try {
     await page.click('#focus-item'); await page.click('#delete-item');
     assert.equal(await page.evaluate(() => window.RBushDemo.snapshot().count), 1000);
     assert.equal(await page.locator('#verification').getAttribute('data-valid'), 'true');
+    const savedBounds = await page.evaluate(() => window.RBushDemo.snapshot().bounds);
+    await page.fill('#min-x', '1500'); await page.fill('#min-y', '1200'); await page.click('#run-query');
+    assert.equal(await page.evaluate(() => window.RBushDemo.snapshot().count), 1001);
+    assert.deepEqual(await page.evaluate(() => window.RBushDemo.snapshot().bounds), savedBounds);
+    assert.equal(await page.locator('#verification').getAttribute('data-valid'), 'true');
+    assert.match(await page.locator('#api-code').innerText(), /tree.Insert\(item\)/);
+    await page.click('#delete-item');
+    assert.equal(await page.evaluate(() => window.RBushDemo.snapshot().count), 1000);
+    assert.deepEqual(await page.evaluate(() => window.RBushDemo.snapshot().bounds), savedBounds);
+    await page.click('[data-mode="query"]');
+    assert.ok(Number(await page.inputValue('#min-x')) <= Number(await page.inputValue('#max-x')));
+    assert.ok(Number(await page.inputValue('#min-y')) <= Number(await page.inputValue('#max-y')));
+    await page.click('#run-query'); assert.equal(await page.locator('#verification').getAttribute('data-valid'), 'true');
     await page.click('#fit');
   });
   await check('Bulk-load versus insertion benchmark', async () => {

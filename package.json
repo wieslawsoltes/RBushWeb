@@ -1,27 +1,61 @@
 {
   "name": "@wieslawsoltes/rbushweb",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Fast dependency-free 2D R-tree spatial index: a full JavaScript port of viceroypenguin/RBush with .NET-style APIs",
   "type": "module",
   "license": "MIT",
   "author": "RBushWeb contributors",
-  "repository": { "type": "git", "url": "git+https://github.com/wieslawsoltes/RBushWeb.git" },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/wieslawsoltes/RBushWeb.git"
+  },
   "homepage": "https://github.com/wieslawsoltes/RBushWeb#readme",
   "bugs": "https://github.com/wieslawsoltes/RBushWeb/issues",
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "exports": {
-    ".": { "import": { "types": "./dist/index.d.ts", "default": "./dist/index.js" }, "require": { "types": "./dist/index.d.cts", "default": "./dist/index.cjs" } },
+    ".": {
+      "import": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      },
+      "require": {
+        "types": "./dist/index.d.cts",
+        "default": "./dist/index.cjs"
+      }
+    },
     "./browser": "./dist/rbushweb.min.js",
     "./package.json": "./package.json"
   },
   "unpkg": "./dist/rbushweb.min.js",
   "jsdelivr": "./dist/rbushweb.min.js",
-  "files": ["dist", "src", "demo", "docs", "LICENSE", "NOTICE", "README.md", "CHANGELOG.md"],
+  "files": [
+    "dist",
+    "src",
+    "demo",
+    "docs",
+    "LICENSE",
+    "NOTICE",
+    "README.md",
+    "CHANGELOG.md"
+  ],
   "sideEffects": false,
-  "engines": { "node": ">=22" },
-  "keywords": ["rbush", "r-tree", "spatial-index", "knn", "nearest-neighbor", "geometry", "gis", "dotnet", "typescript", "browser"],
+  "engines": {
+    "node": ">=22"
+  },
+  "keywords": [
+    "rbush",
+    "r-tree",
+    "spatial-index",
+    "knn",
+    "nearest-neighbor",
+    "geometry",
+    "gis",
+    "dotnet",
+    "typescript",
+    "browser"
+  ],
   "scripts": {
     "build": "node scripts/build.mjs",
     "build:demo": "node scripts/build-demo.mjs",
@@ -34,6 +68,13 @@
     "dev": "node scripts/serve.mjs",
     "prepack": "npm run build"
   },
-  "devDependencies": { "esbuild": "0.28.2", "playwright": "1.63.0", "typescript": "7.0.2" },
-  "publishConfig": { "access": "public", "provenance": true }
+  "devDependencies": {
+    "esbuild": "0.28.2",
+    "playwright": "1.63.0",
+    "typescript": "7.0.2"
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  }
 }

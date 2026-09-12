@@ -43,7 +43,7 @@ Serve the package's `dist` directory or use a pinned CDN module URL:
 
 ```html
 <script type="module">
-  import { RBush, Envelope } from 'https://cdn.jsdelivr.net/npm/@wieslawsoltes/rbushweb@0.1.0/dist/index.js';
+  import { RBush, Envelope } from 'https://cdn.jsdelivr.net/npm/@wieslawsoltes/rbushweb@0.1.1/dist/index.js';
   const tree = new RBush();
   tree.Insert({ Envelope: new Envelope(0, 0, 20, 20) });
   console.log(tree.Search(new Envelope(10, 10, 30, 30)));

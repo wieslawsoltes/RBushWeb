@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.1
+
+- Preserve saved spatial queries while inserting, deleting, moving, clearing, generating, or importing data.
+- Keep nearest-neighbor parameters independent of insertion coordinates and restore valid bounds between editing modes.
+- Add browser regression coverage for insertion outside the current query window.
+
 ## 0.1.0
 
 Initial JavaScript port of viceroypenguin/RBush at commit 101b6fb915215d9d30294a1178fe09ebd6929d73.

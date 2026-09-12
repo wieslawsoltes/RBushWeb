@@ -6,7 +6,7 @@ const ctx = canvas.getContext('2d');
 const categories = ['coral', 'teal', 'indigo'];
 const colors = { coral: '#e78b79', teal: '#6badad', indigo: '#929bcc' };
 const number = new Intl.NumberFormat('en-US');
-const state = { tree: new RBush(9), items: [], results: [], resultSet: new Set(), mode: 'query', selected: null, query: new Envelope(300, 200, 650, 450), center: { x: 500, y: 350 }, view: { x: 500, y: 350, scale: 1 }, nextId: 1, buildTime: 0, queryTime: 0, bruteTime: null, resultKind: 'query', drag: null, dirty: true, space: false, width: 0, height: 0, nodes: [] };
+const state = { tree: new RBush(9), items: [], results: [], resultSet: new Set(), mode: 'query', selected: null, query: new Envelope(300, 200, 650, 450), center: { x: 500, y: 350 }, k: 12, radius: null, view: { x: 500, y: 350, scale: 1 }, nextId: 1, buildTime: 0, queryTime: 0, bruteTime: null, resultKind: 'query', drag: null, dirty: true, space: false, width: 0, height: 0, nodes: [] };
 let toastTimer;
 let renderPending = false;
 
@@ -77,7 +77,7 @@ async function generate() {
     $('build-method').textContent = 'Bulk loading · OMT packing';
     $('benchmark-result').hidden = true;
     $('inspector').hidden = true;
-    updateStats(); fitView(); runQuery();
+    updateStats(); fitView(); runQuery(undefined, false);
   } finally { $('generate').disabled = false; }
 }
 async function benchmark() {
@@ -111,14 +111,15 @@ function distance(item, point) {
   const e = item.Envelope, dx = Math.max(e.MinX - point.x, 0, point.x - e.MaxX), dy = Math.max(e.MinY - point.y, 0, point.y - e.MaxY);
   return Math.hypot(dx, dy);
 }
-function runQuery(kind = state.mode === 'nearest' ? 'nearest' : 'query') {
+function runQuery(kind = state.mode === 'nearest' ? 'nearest' : 'query', fromInputs = true) {
   const predicate = categoryPredicate();
   let result, reference, snippet, start, good = null, k, radius;
   state.bruteTime = null;
   if (kind === 'nearest') {
-    state.center = { x: numeric('min-x'), y: numeric('min-y') };
-    k = numeric('neighbors', 0, 100000, true);
-    radius = $('radius').value.trim() === '' ? null : numeric('radius', 0, 2000);
+    const center = fromInputs ? { x: numeric('min-x'), y: numeric('min-y') } : state.center;
+    k = fromInputs ? numeric('neighbors', 0, 100000, true) : state.k;
+    radius = fromInputs ? ($('radius').value.trim() === '' ? null : numeric('radius', 0, 2000)) : state.radius;
+    state.center = center; state.k = k; state.radius = radius;
     start = performance.now(); result = state.tree.Knn(k, state.center.x, state.center.y, radius, predicate); state.queryTime = performance.now() - start;
     snippet = `const matches = tree.Knn(\n  ${k}, ${state.center.x}, ${state.center.y}, ${radius ?? 'null'}${predicate ? `,\n  item => item.category === '${$('category').value}'` : ''}\n);`;
     if ($('verify').checked) {
@@ -131,7 +132,7 @@ function runQuery(kind = state.mode === 'nearest' ? 'nearest' : 'query') {
       good = result.length === reference.length && new Set(result).size === result.length && result.every(item => !predicate || predicate(item)) && actualDistances.every((d, i) => Math.abs(d - reference[i].distance) <= 1e-8);
     }
   } else {
-    const bounds = kind === 'all' ? null : queryBounds();
+    const bounds = kind === 'all' ? null : fromInputs ? queryBounds() : state.query;
     if (bounds) state.query = bounds;
     start = performance.now(); result = bounds ? state.tree.Search(bounds) : state.tree.Search(); if (predicate) result = result.filter(predicate); state.queryTime = performance.now() - start;
     snippet = bounds ? `const bounds = new Envelope(${[bounds.MinX, bounds.MinY, bounds.MaxX, bounds.MaxY].join(', ')});\nconst matches = tree.Search(bounds);` : 'const matches = tree.Search();\nconsole.log(tree.Count, tree.Root.Height);';
@@ -142,7 +143,6 @@ function runQuery(kind = state.mode === 'nearest' ? 'nearest' : 'query') {
     }
   }
   state.resultKind = kind;
-  state.radius = radius;
   state.results = result;
   state.resultSet = new Set(result);
   $('query-time').innerHTML = `${formatMs(state.queryTime)}<span> ms</span>`;
@@ -179,7 +179,7 @@ function inspectItem(item) {
 function insertAt(point) {
   const pointOnly = $('shape').value === 'points', category = $('category').value === 'all' ? categories[(state.nextId - 1) % 3] : $('category').value;
   const item = { id: state.nextId++, category, Envelope: new Envelope(point.x, point.y, point.x + (pointOnly ? 0 : 18), point.y + (pointOnly ? 0 : 14)) };
-  state.tree.Insert(item); state.items.push(item); updateStats(); runQuery(state.resultKind); inspectItem(item);
+  state.tree.Insert(item); state.items.push(item); updateStats(); runQuery(state.resultKind, false); inspectItem(item);
   $('api-code').textContent = `const item = { id: ${item.id}, category: '${category}',\n  Envelope: new Envelope(${[item.Envelope.MinX, item.Envelope.MinY, item.Envelope.MaxX, item.Envelope.MaxY].map(n => Number(n.toFixed(2))).join(', ')}) };\ntree.Insert(item);`;
   notify(`Inserted item ${item.id}. The index now contains ${number.format(state.tree.Count)} items.`);
 }
@@ -188,14 +188,15 @@ function deleteSelected() {
   if (!item) return notify('Select an item in the results first.');
   if (!state.tree.Delete(item)) throw new Error('The selected item could not be removed.');
   state.items.splice(state.items.indexOf(item), 1); state.selected = null; $('inspector').hidden = true;
-  updateStats(); runQuery(state.resultKind);
+  updateStats(); runQuery(state.resultKind, false);
   $('api-code').textContent = `const removed = tree.Delete(item); // true\nconsole.log(tree.Count); // ${state.tree.Count}`;
   notify(`Deleted item ${item.id}.`);
 }
 function setMode(mode) {
-  // Nearest uses the minimum-coordinate fields as a point; restore the last
-  // rectangle when returning to a mode that interprets all four fields.
-  if (state.mode === 'nearest' && mode !== 'nearest') syncBounds(state.query);
+  // Point-based modes reuse the minimum-coordinate fields. Restore the saved
+  // rectangle on exit instead of treating a point as new rectangle minima.
+  if (state.mode !== mode && (state.mode === 'nearest' || state.mode === 'insert') && mode !== 'nearest') syncBounds(state.query);
+  if (state.mode !== mode && mode === 'nearest') { $('min-x').value = state.center.x; $('min-y').value = state.center.y; }
   state.mode = mode;
   for (const button of document.querySelectorAll('[data-mode]')) { const on = button.dataset.mode === mode; button.classList.toggle('selected', on); button.setAttribute('aria-pressed', String(on)); }
   const instructions = { query: 'Drag a rectangle to discover what\'s inside', nearest: 'Click anywhere to find its nearest neighbors', insert: 'Click to insert a new item into the index', move: 'Drag an item to update its indexed position' };
@@ -324,7 +325,7 @@ canvas.addEventListener('pointerup', protect(event => {
   if (drag?.type === 'query') { syncBounds(state.query); runQuery('query'); }
   else if (drag?.type === 'move' && drag.preview) {
     if (!state.tree.Delete(drag.item)) throw new Error('Could not update the selected item.');
-    drag.item.Envelope = drag.preview; state.tree.Insert(drag.item); updateStats(); runQuery(state.resultKind); inspectItem(drag.item);
+    drag.item.Envelope = drag.preview; state.tree.Insert(drag.item); updateStats(); runQuery(state.resultKind, false); inspectItem(drag.item);
     $('api-code').textContent = 'tree.Delete(item); // remove using the original envelope\nitem.Envelope = updatedEnvelope;\ntree.Insert(item); // re-index its new position';
     notify(`Updated item ${drag.item.id} with Delete + Insert.`);
   }
@@ -343,12 +344,13 @@ $('run-query').addEventListener('click', protect(() => state.mode === 'insert' ?
 $('search-all').addEventListener('click', protect(() => runQuery('all')));
 $('fit').addEventListener('click', fitView);
 for (const button of document.querySelectorAll('[data-mode]')) button.addEventListener('click', () => setMode(button.dataset.mode));
-for (const id of ['category', 'neighbors', 'radius', 'verify']) $(id).addEventListener('change', protect(() => runQuery(state.resultKind)));
+for (const id of ['category', 'neighbors', 'radius']) $(id).addEventListener('change', protect(() => state.mode === 'nearest' ? runQuery('nearest') : runQuery(state.resultKind, false)));
+$('verify').addEventListener('change', protect(() => runQuery(state.resultKind, false)));
 for (const id of ['show-tree', 'tree-level']) $(id).addEventListener('change', () => { $('tree-level-value').value = $('tree-level').value === 'all' ? 'All' : $('tree-level').value; requestRender(); });
 $('delete-item').addEventListener('click', protect(deleteSelected));
 $('close-inspector').addEventListener('click', () => { state.selected = null; $('inspector').hidden = true; renderResults(); requestRender(); });
 $('focus-item').addEventListener('click', () => { if (!state.selected) return; const e = state.selected.Envelope; state.view = { x: (e.MinX + e.MaxX) / 2, y: (e.MinY + e.MaxY) / 2, scale: Math.min(10, (state.width - 60) / Math.max(60, e.MaxX - e.MinX), (state.height - 60) / Math.max(60, e.MaxY - e.MinY)) }; requestRender(); });
-$('clear').addEventListener('click', protect(() => { state.tree.Clear(); state.items = []; state.selected = null; state.buildTime = 0; state.nextId = 1; $('inspector').hidden = true; $('benchmark-result').hidden = true; updateStats(); runQuery(state.resultKind); $('api-code').textContent = 'tree.Clear();\nconsole.log(tree.Count); // 0'; notify('Index cleared. Generate a new dataset or insert individual items.'); }));
+$('clear').addEventListener('click', protect(() => { state.tree.Clear(); state.items = []; state.selected = null; state.buildTime = 0; state.nextId = 1; $('inspector').hidden = true; $('benchmark-result').hidden = true; updateStats(); runQuery(state.resultKind, false); $('api-code').textContent = 'tree.Clear();\nconsole.log(tree.Count); // 0'; notify('Index cleared. Generate a new dataset or insert individual items.'); }));
 $('copy-code').addEventListener('click', protect(async () => { await navigator.clipboard.writeText($('api-code').textContent); notify('API example copied.'); }));
 $('run-recipe').addEventListener('click', protect(() => {
   const kind = $('recipe').value;
@@ -404,7 +406,7 @@ $('import-file').addEventListener('change', protect(async event => {
   const tree = new RBush(capacity); const start = performance.now(); tree.BulkLoad(items); state.buildTime = performance.now() - start;
   Object.assign(state, { tree, items, capacity, nextId: items.reduce((max, item) => Math.max(max, item.id), 0) + 1, selected: null });
   $('capacity').value = capacity; $('dataset-description').textContent = 'Imported JSON dataset'; $('build-method').textContent = 'Bulk loading · imported data'; $('inspector').hidden = true; $('benchmark-result').hidden = true;
-  updateStats(); fitView(); runQuery(); notify(`Imported ${number.format(items.length)} items.`);
+  updateStats(); fitView(); runQuery(undefined, false); notify(`Imported ${number.format(items.length)} items.`);
 }));
 function applyTheme(theme) {
   document.documentElement.dataset.theme = theme;
