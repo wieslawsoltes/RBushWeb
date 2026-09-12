@@ -1,6 +1,7 @@
 # RBushWeb
 
 [![CI](https://github.com/wieslawsoltes/RBushWeb/actions/workflows/ci.yml/badge.svg)](https://github.com/wieslawsoltes/RBushWeb/actions/workflows/ci.yml)
+[![GitHub Pages](https://github.com/wieslawsoltes/RBushWeb/actions/workflows/pages.yml/badge.svg)](https://github.com/wieslawsoltes/RBushWeb/actions/workflows/pages.yml)
 [![npm publishing](https://github.com/wieslawsoltes/RBushWeb/actions/workflows/npm-publish.yml/badge.svg)](https://github.com/wieslawsoltes/RBushWeb/actions/workflows/npm-publish.yml)
 [![npm version](https://img.shields.io/npm/v/%40wieslawsoltes%2Frbushweb)](https://www.npmjs.com/package/@wieslawsoltes/rbushweb)
 [![npm downloads](https://img.shields.io/npm/dm/%40wieslawsoltes%2Frbushweb)](https://www.npmjs.com/package/@wieslawsoltes/rbushweb)
@@ -8,7 +9,7 @@
 
 A fast, reusable, dependency-free JavaScript port of [viceroypenguin/RBush](https://github.com/viceroypenguin/RBush), preserving its .NET-style public API for spatial indexing of points and rectangles. Use it in browsers, Web Workers, Node, or any framework. The library has no DOM dependency; the included **Spatial Lab** is a separate plain HTML/JavaScript application.
 
-**[API and compatibility](docs/api.md)** · **[Upstream test mapping](docs/test-parity.md)** · **[Performance](docs/performance.md)** · **[Release downloads](https://github.com/wieslawsoltes/RBushWeb/releases)** · **[Publishing](docs/publishing.md)**
+**[Live Spatial Lab](https://wieslawsoltes.github.io/RBushWeb/)** · **[API and compatibility](docs/api.md)** · **[Upstream test mapping](docs/test-parity.md)** · **[Performance](docs/performance.md)** · **[Release downloads](https://github.com/wieslawsoltes/RBushWeb/releases)** · **[Publishing](docs/publishing.md)**
 
 ## Install
 
@@ -91,6 +92,8 @@ Distance is Euclidean distance to the rectangle, zero for a point inside it. Max
 
 ## Spatial Lab sample
 
+**[Open Spatial Lab](https://wieslawsoltes.github.io/RBushWeb/)** in your browser, or run it locally:
+
 ```sh
 npm ci
 npm run dev
@@ -99,7 +102,7 @@ npm run dev
 
 Explore generated points and rectangles, bulk versus individual insertion, query results, nearest neighbors, custom filters, node bounds, editing, and JSON import/export. The sample uses a Canvas2D viewport with light and dark themes; rendering and indexing are separate modules.
 
-`npm run build:demo` produces a self-contained `site/` directory after `npm run build`. Every release includes the browser modules and sample as separate archives. An optional GitHub Pages workflow is included.
+`npm run build:demo` produces a self-contained `site/` directory after `npm run build`. Every release includes the browser modules and sample as separate archives. The GitHub Pages workflow automatically tests and deploys the sample on every push to `main`, then runs the browser checks against the published site.
 
 ## Development and validation
 

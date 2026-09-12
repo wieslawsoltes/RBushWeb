@@ -1,7 +1,8 @@
 name: Deploy showcase
 
-# Optional hosting is independent from verification and npm publication.
 on:
+  push:
+    branches: [main]
   workflow_dispatch:
 
 permissions:
@@ -12,9 +13,17 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  build:
+  deploy:
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7
@@ -22,24 +31,33 @@ jobs:
           node-version: 24
           cache: npm
       - run: npm ci
-      - run: npm run build
-      - run: npm run build:demo
+      - run: npm run check
+      - run: npx playwright install --with-deps chromium
+      - name: Test the built GitHub Pages layout
+        run: npm run test:browser
+        env:
+          RBUSH_DEMO_ROOT: site
+          RBUSH_DEMO_BASE_PATH: /RBushWeb/
+          RBUSH_DEMO_SCREENSHOT: test-results/pages-build/demo-desktop.png
+      - uses: actions/configure-pages@v6
       - uses: actions/upload-pages-artifact@v5
         with:
           path: site
           include-hidden-files: true
 
-  deploy:
-    needs: build
-    runs-on: ubuntu-latest
-    permissions:
-      pages: write
-      id-token: write
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    steps:
-      - uses: actions/configure-pages@v6
       - name: Deploy showcase
         id: deployment
         uses: actions/deploy-pages@v4
+      - name: Verify the live Spatial Lab
+        env:
+          RBUSH_DEMO_URL: ${{ steps.deployment.outputs.page_url }}
+          RBUSH_DEMO_SCREENSHOT: test-results/pages-live/demo-desktop.png
+        run: |
+          curl --fail --silent --show-error --retry 12 --retry-all-errors --retry-delay 5 "$RBUSH_DEMO_URL" --output /dev/null
+          npm run test:browser
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: pages-browser-verification
+          path: test-results/
+          if-no-files-found: ignore

@@ -99,9 +99,11 @@ Automatic main-branch publication always uses `latest`, including versions with 
 
 The manual `dist_tag` input controls the tag used when publishing an absent version and the tag checked during verification. It does not move tags on already published versions. Retrying an old version after `latest` has advanced, or selecting `next` for an existing version that is only tagged `latest`, therefore fails tag verification even when the artifact bytes match. Use the tag that already identifies the intended version, or deliberately update the registry tag as a separate maintainer action. Do not move `latest` backward merely to make an old verification run pass.
 
-## Optional GitHub Pages showcase
+## GitHub Pages showcase
 
-The [Deploy showcase workflow](../.github/workflows/pages.yml) is separate from CI and npm publication and runs only by manual dispatch on `main`. Configure the repository's Pages source as **GitHub Actions**, then run **Deploy showcase**. It builds the library and `site/`, uploads a Pages artifact, and deploys to the `github-pages` environment.
+The [live Spatial Lab](https://wieslawsoltes.github.io/RBushWeb/) is deployed by the [Deploy showcase workflow](../.github/workflows/pages.yml) on every push to `main`. Manual dispatch on `main` is also available for retries. The workflow builds the library and `site/`, runs the tests and browser checks against the built artifact under the `/RBushWeb/` project path, uploads the Pages artifact, and deploys to the `github-pages` environment. It then runs the browser checks against the public deployment URL. Screenshots from both checks are available in the `pages-browser-verification` artifact.
+
+For a new repository or fork, select **Settings → Pages → Build and deployment → Source → GitHub Actions** before running the workflow. Pages deployment uses the workflow's `GITHUB_TOKEN` with `pages: write` and `id-token: write`; it does not need the npm publishing token.
 
 Repository Pages permissions and any environment protection rules must permit deployment. A Pages configuration or deployment failure does not block npm publication. The release's `rbushweb-showcase.tar.gz` can also be extracted and served by any static HTTP server; deployment does not require an application backend.
 

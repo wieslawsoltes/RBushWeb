@@ -5,20 +5,35 @@ import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 import { chromium } from 'playwright';
 
-const root = path.resolve(fileURLToPath(new URL('../', import.meta.url)));
-const screenshot = path.resolve(process.env.RBUSH_DEMO_SCREENSHOT || path.join(root, 'test-results', 'demo-desktop.png'));
+const projectRoot = path.resolve(fileURLToPath(new URL('../', import.meta.url)));
+// RBUSH_DEMO_ROOT=site and RBUSH_DEMO_BASE_PATH=/RBushWeb/ exercise the Pages
+// artifact and redirect. RBUSH_DEMO_URL tests a deployment without a server.
+const root = path.resolve(projectRoot, process.env.RBUSH_DEMO_ROOT || '.');
+const basePath = `/${(process.env.RBUSH_DEMO_BASE_PATH || '').replace(/^\/+|\/+$/g, '')}/`.replace(/^\/\/$/, '/');
+assert.equal(new URL(basePath, 'http://localhost').pathname, basePath, 'RBUSH_DEMO_BASE_PATH must be a URL path');
+let demoUrl = process.env.RBUSH_DEMO_URL;
+if (demoUrl) assert.ok(['http:', 'https:'].includes(new URL(demoUrl).protocol), 'RBUSH_DEMO_URL must use HTTP or HTTPS');
+const screenshot = path.resolve(process.env.RBUSH_DEMO_SCREENSHOT || path.join(projectRoot, 'test-results', 'demo-desktop.png'));
 await mkdir(path.dirname(screenshot), { recursive: true });
 const mime = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.json': 'application/json', '.svg': 'image/svg+xml' };
-const server = createServer(async (request, response) => {
+const server = demoUrl ? null : createServer(async (request, response) => {
   try {
     const pathname = decodeURIComponent(new URL(request.url, 'http://localhost').pathname);
-    let file = path.resolve(root, `.${pathname}`);
+    if (!pathname.startsWith(basePath)) { response.writeHead(404).end('Not found'); return; }
+    let file = path.resolve(root, pathname.slice(basePath.length));
     if (file !== root && !file.startsWith(`${root}${path.sep}`)) { response.writeHead(403).end(); return; }
     if ((await stat(file)).isDirectory()) file = path.join(file, 'index.html');
     response.writeHead(200, { 'content-type': mime[path.extname(file)] ?? 'application/octet-stream' }); response.end(await readFile(file));
   } catch { response.writeHead(404).end('Not found'); }
 });
-await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
+if (server) {
+  await new Promise((resolve, reject) => {
+    server.once('error', reject);
+    server.listen(0, '127.0.0.1', resolve);
+  });
+  const entryPath = process.env.RBUSH_DEMO_ROOT ? basePath : `${basePath}demo/`;
+  demoUrl = `http://127.0.0.1:${server.address().port}${entryPath}`;
+}
 let browser;
 const failures = [];
 let checks = 0;
@@ -29,7 +44,7 @@ try {
   browser = await chromium.launch({ headless: true, executablePath: process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH || undefined, args: ['--no-sandbox'] });
   const page = await browser.newPage({ viewport: { width: 1512, height: 1100 }, deviceScaleFactor: 1 });
   page.on('pageerror', error => failures.push(error.message));
-  await page.goto(`http://127.0.0.1:${server.address().port}/demo/`);
+  await page.goto(demoUrl);
   await page.waitForFunction(() => window.RBushDemo?.snapshot().count === 10000);
   await check('Initial bulk-loaded dataset and exact query agreement', async () => {
     assert.equal(await page.locator('#count').innerText(), '10,000');
@@ -167,5 +182,5 @@ try {
   console.log(`\n${checks} browser checks passed.`);
 } finally {
   if (browser) await browser.close();
-  await new Promise(resolve => server.close(resolve));
+  if (server) await new Promise(resolve => server.close(resolve));
 }
