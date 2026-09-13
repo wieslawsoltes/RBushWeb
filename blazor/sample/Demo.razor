@@ -1,0 +1,51 @@
+@page "/"
+@namespace RBushWeb.Blazor.Sample
+@using RBushWeb.Blazor
+@using Microsoft.AspNetCore.Components
+@implements IAsyncDisposable
+<main>
+    <h1>RBushWeb + Blazor</h1>
+    <p>A native browser R-tree with typed C# spatial operations and Razor-rendered query results.</p>
+    <button id="action" @onclick="Query" disabled="@(!_ready)">Run spatial and nearest-neighbor checks</button>
+    <button id="toggle" @onclick="Toggle">@(_show ? "Unmount" : "Mount")</button>
+    @if (_show) {
+        <SpatialProvider Ready="Initialize"><ChildContent Context="runtime">
+            @if (_index is not null) {
+                <SpatialQuery TItem="string" Index="_index" Bounds="_bounds" Revision="_revision">
+                    <ChildContent Context="items">
+                        <p>Intersecting rectangles: @items.Count</p>
+                        <svg viewBox="0 0 500 300" style="width:100%;max-height:420px;background:white" role="img" aria-label="R-tree query results">
+                            @foreach (var item in items) { <rect @key="item.Id" x="@item.Envelope.MinX" y="@item.Envelope.MinY" width="@(item.Envelope.MaxX-item.Envelope.MinX)" height="@(item.Envelope.MaxY-item.Envelope.MinY)" fill="#4675c0" stroke="white"><title>@item.Value</title></rect> }
+                            <rect x="@_bounds.MinX" y="@_bounds.MinY" width="@(_bounds.MaxX-_bounds.MinX)" height="@(_bounds.MaxY-_bounds.MinY)" fill="none" stroke="#d9414f" stroke-width="2" />
+                        </svg>
+                    </ChildContent>
+                </SpatialQuery>
+            }
+        </ChildContent></SpatialProvider>
+    }
+    <output id="status">@_status</output><output id="result">@_result</output>
+</main>
+@code {
+    private SpatialIndex<string>? _index;
+    private readonly SpatialItem<string>[] _items = Enumerable.Range(0, 100).Select(i => new SpatialItem<string>($"item-{i}", new Envelope(i%20*24, i/20*48, i%20*24+20, i/20*48+36), $"Rectangle {i}")).ToArray();
+    private Envelope _bounds = new(100, 50, 320, 220);
+    private bool _show = true, _ready;
+    private long _revision;
+    private string _status = "Loading", _result = "";
+    private async Task Initialize(BrowserModule module) { _index = await SpatialIndex<string>.CreateAsync(module); await _index.BulkLoadAsync(_items); _ready = true; _status = "Ready"; }
+    private async Task Query()
+    {
+        var found = await _index!.SearchAsync(_bounds);
+        var expected = _items.Count(i => i.Envelope.MinX <= _bounds.MaxX && i.Envelope.MaxX >= _bounds.MinX && i.Envelope.MinY <= _bounds.MaxY && i.Envelope.MaxY >= _bounds.MinY);
+        if (found.Length != expected || !(await _index.CollidesAsync(_bounds))) throw new InvalidOperationException("Native spatial query differs from brute force.");
+        var nearest = await _index.KnnAsync(1, 0, 0);
+        if (nearest.Length != 1 || nearest[0].Id != "item-0") throw new InvalidOperationException("Native nearest-neighbor query failed.");
+        var snapshot = await _index.ExportAsync();
+        if (!await _index.DeleteAsync("item-0") || await _index.GetCountAsync() != 99) throw new InvalidOperationException("Identity-safe removal failed.");
+        await _index.ImportAsync(snapshot); await _index.ValidateAsync();
+        if (await _index.GetCountAsync() != 100) throw new InvalidOperationException("Snapshot restore failed.");
+        _revision++; _result = "Passed";
+    }
+    private async Task Toggle() { _ready = false; if (_show && _index is not null) { await _index.DisposeAsync(); _index = null; } _show = !_show; _status = _show ? "Loading" : "Unmounted"; _result = ""; }
+    public async ValueTask DisposeAsync() { if (_index is not null) await _index.DisposeAsync(); }
+}

@@ -1,0 +1,27 @@
+@namespace RBushWeb.Blazor
+@using Microsoft.AspNetCore.Components
+@typeparam TItem
+@implements IAsyncDisposable
+@if (_loaded) { @ChildContent?.Invoke(_items) } else { @Loading }
+@code {
+    [Parameter, EditorRequired] public SpatialIndex<TItem> Index { get; set; } = default!;
+    [Parameter] public Envelope? Bounds { get; set; }
+    [Parameter] public long Revision { get; set; }
+    [Parameter] public RenderFragment<IReadOnlyList<SpatialItem<TItem>>>? ChildContent { get; set; }
+    [Parameter] public RenderFragment? Loading { get; set; }
+    private IReadOnlyList<SpatialItem<TItem>> _items = Array.Empty<SpatialItem<TItem>>();
+    private SpatialIndex<TItem>? _lastIndex;
+    private Envelope? _lastBounds;
+    private long _lastRevision;
+    private bool _loaded, _disposed;
+    private int _request;
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (_disposed || (_loaded && ReferenceEquals(Index, _lastIndex) && Equals(Bounds, _lastBounds) && Revision == _lastRevision)) return;
+        var request = ++_request; var index = Index; var bounds = Bounds; var revision = Revision;
+        var items = await index.SearchAsync(bounds);
+        if (_disposed || request != _request) return;
+        _items = items; _lastIndex = index; _lastBounds = bounds; _lastRevision = revision; _loaded = true; StateHasChanged();
+    }
+    public ValueTask DisposeAsync() { _disposed = true; ++_request; return ValueTask.CompletedTask; }
+}
