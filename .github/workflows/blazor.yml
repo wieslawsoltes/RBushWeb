@@ -1,0 +1,24 @@
+name: Blazor
+on:
+  pull_request:
+  push:
+    branches: [main]
+    paths: ['blazor/**', 'src/**', 'dist/**', 'package*.json', '.gitmodules', '.github/workflows/blazor.yml']
+  workflow_dispatch:
+    inputs:
+      publish:
+        description: Publish the checked-in Blazor version from main
+        type: boolean
+        default: false
+permissions:
+  contents: read
+jobs:
+  blazor:
+    permissions:
+      contents: write
+    uses: wieslawsoltes/Dockyard/.github/workflows/blazor.yml@1c895b7184451071e1c7131063249d2d9eb145b9
+    with:
+      project: blazor/src/RBushWeb.Blazor.csproj
+      package_name: RBushWeb
+      publish: ${{ github.event_name == 'workflow_dispatch' && inputs.publish }}
+    secrets: inherit
