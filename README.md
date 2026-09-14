@@ -4,7 +4,7 @@ A reusable R-tree spatial index for JavaScript, TypeScript and Blazor.
 
 [![npm](https://img.shields.io/npm/v/%40wieslawsoltes%2Frbushweb)](https://www.npmjs.com/package/@wieslawsoltes/rbushweb)
 [![npm downloads](https://img.shields.io/npm/dm/%40wieslawsoltes%2Frbushweb)](https://www.npmjs.com/package/@wieslawsoltes/rbushweb)
-[![NuGet](https://img.shields.io/nuget/v/RBushWeb.Blazor)](https://www.nuget.org/packages/RBushWeb.Blazor)
+[![RBushWeb.Blazor on NuGet](https://img.shields.io/nuget/v/RBushWeb.Blazor?label=RBushWeb.Blazor&logo=nuget)](https://www.nuget.org/packages/RBushWeb.Blazor)
 [![NuGet downloads](https://img.shields.io/nuget/dt/RBushWeb.Blazor)](https://www.nuget.org/packages/RBushWeb.Blazor)
 [![Blazor CI](https://github.com/wieslawsoltes/RBushWeb/actions/workflows/blazor.yml/badge.svg)](https://github.com/wieslawsoltes/RBushWeb/actions/workflows/blazor.yml)
 
