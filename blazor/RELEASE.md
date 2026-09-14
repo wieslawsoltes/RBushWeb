@@ -1,10 +1,7 @@
-# RBushWeb.Blazor 0.2.1
+# RBushWeb.Blazor 0.2.2
 
-Updates the pinned shared runtime to tested Dockyard revision `1c895b7184451071e1c7131063249d2d9eb145b9`, retaining a self-contained NuGet package.
+Adopts merged, validated shared runtime c833be49d472583b6f56225862e0aa7d201c1da7 from Dockyard PR #5. Fixes concurrent visual cleanup, queued callbacks after removal, late template imports/creation and retained cleanup failures. Includes lifecycle state, awaitable Razor factory disposal and coalesced updates.
 
-- Preserve cyclic/deep native arguments, shared callback identity and callable property/method/disposal access.
-- Await concurrent native/module/subscription cleanup and asynchronous unsubscribe, continuing cleanup after individual failures.
-- Honor initialization-wait cancellation independently for each caller and prevent late native work after disposal.
-- Add `CallFunctionJsonAsync<T>` for complete streamed callable results and expanded JavaScript/managed regressions.
+Preserves stable-ID spatial services, atomic snapshots, intersection/KNN operations, Razor query/provider components and complete native APIs. Updates both READMEs and release notes. .NET 8/.NET 10 package-restored WebAssembly/Server validation adds template movement/update/recreation and managed lifetime races alongside native spatial assertions and eight new shared JavaScript cases.
 
-Typed stable-ID spatial services, bulk/intersection/KNN queries, snapshots and Razor provider/query components remain available. .NET 8/.NET 10 actual-package WebAssembly/Server tests validate native queries, snapshot integrity, streaming and Razor callbacks before publication. Downloaded public NuGet payloads are verified before release creation. Native engine/browser contracts are unchanged.
+NuGet publication verifies public payloads before package/symbol/sample release creation. No Dockyard runtime dependency or changes to native engine compatibility boundaries are introduced.
