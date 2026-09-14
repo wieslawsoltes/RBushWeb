@@ -1,6 +1,6 @@
 # RBushWeb.Blazor
 
-Install `RBushWeb.Blazor` 0.2.0 for .NET 8/.NET 10. The native R-tree browser engine is included as local static assets for interactive WebAssembly and Server.
+Install `RBushWeb.Blazor` 0.2.1 for .NET 8/.NET 10. The native R-tree browser engine is included as local static assets for interactive WebAssembly and Server.
 
 ## Typed spatial services
 
