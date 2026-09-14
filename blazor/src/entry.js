@@ -26,7 +26,13 @@ export class BlazorSpatialIndex {
   Validate() { this.check(); return this.tree.Validate(); }
   Clear() { this.check(); this.tree.Clear(); this.items.clear(); }
   Export() { this.check(); return JSON.stringify({ version: 1, maxEntries: this.tree.MaxEntries, items: [...this.items.values()] }); }
-  Import(json) { this.check(); const data = JSON.parse(json); if (data.version !== 1 || !Array.isArray(data.items)) throw new Error('Unsupported spatial snapshot.'); this.BulkLoad(data.items, true); }
+  Import(json) {
+    this.check(); const data = JSON.parse(json);
+    if (data?.version !== 1 || !Array.isArray(data.items) || !Number.isSafeInteger(data.maxEntries) || data.maxEntries < 4) throw new Error('Unsupported spatial snapshot.');
+    const replacement = new BlazorSpatialIndex(data.maxEntries);
+    replacement.BulkLoad(data.items, true); replacement.Validate();
+    this.tree = replacement.tree; this.items = replacement.items;
+  }
   Dispose() { if (this.disposed) return; this.tree.Clear(); this.items.clear(); this.disposed = true; }
 }
 export const api = { ...engine, BlazorSpatialIndex };

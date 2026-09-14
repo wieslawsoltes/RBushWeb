@@ -1,5 +1,5 @@
 @page "/"
-@namespace RBushWeb.Blazor.Sample
+@namespace RBushWebBlazorSample
 @using RBushWeb.Blazor
 @using Microsoft.AspNetCore.Components
 @implements IAsyncDisposable
@@ -24,6 +24,7 @@
         </ChildContent></SpatialProvider>
     }
     <output id="status">@_status</output><output id="result">@_result</output>
+    <InteropProbe />
 </main>
 @code {
     private SpatialIndex<string>? _index;

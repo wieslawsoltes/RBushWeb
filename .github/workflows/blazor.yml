@@ -16,7 +16,7 @@ jobs:
   blazor:
     permissions:
       contents: write
-    uses: wieslawsoltes/Dockyard/.github/workflows/blazor.yml@82d4a2a1ae9884744ff9859b83b6a400ad45720a
+    uses: wieslawsoltes/Dockyard/.github/workflows/blazor.yml@4da3066e32f61c05b42563f952281fa78e1bb96a
     with:
       project: blazor/src/RBushWeb.Blazor.csproj
       package_name: RBushWeb

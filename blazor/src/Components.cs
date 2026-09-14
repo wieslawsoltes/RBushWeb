@@ -19,17 +19,17 @@ public sealed class SpatialIndex<T> : IAsyncDisposable
     private SpatialIndex(BrowserModule module, IJSObjectReference handle) { Module = module; Handle = handle; }
     public static async ValueTask<SpatialIndex<T>> CreateAsync(BrowserModule module, int maxEntries = 9) => new(module, await module.CreateAsync("BlazorSpatialIndex", [maxEntries]));
     public ValueTask<int> GetCountAsync() => Module.GetAsync<int>(Handle, "Count");
-    public ValueTask InsertAsync(SpatialItem<T> item) => Module.CallVoidAsync(Handle, "Insert", [item]);
-    public ValueTask UpsertAsync(SpatialItem<T> item) => Module.CallVoidAsync(Handle, "Upsert", [item]);
-    public ValueTask BulkLoadAsync(IEnumerable<SpatialItem<T>> items, bool replace = false) => Module.CallVoidAsync(Handle, "BulkLoad", [items, replace]);
+    public ValueTask InsertAsync(SpatialItem<T> item) => Module.CallVoidAsync(Handle, "Insert", [BrowserValue.Literal(item)]);
+    public ValueTask UpsertAsync(SpatialItem<T> item) => Module.CallVoidAsync(Handle, "Upsert", [BrowserValue.Literal(item)]);
+    public ValueTask BulkLoadAsync(IEnumerable<SpatialItem<T>> items, bool replace = false) => Module.CallVoidAsync(Handle, "BulkLoad", [BrowserValue.Literal(items), replace]);
     public ValueTask<bool> DeleteAsync(string id) => Module.CallAsync<bool>(Handle, "Delete", [id]);
-    public ValueTask<SpatialItem<T>[]> SearchAsync(Envelope? bounds = null) => Module.CallAsync<SpatialItem<T>[]>(Handle, "Search", [bounds]);
+    public ValueTask<SpatialItem<T>[]> SearchAsync(Envelope? bounds = null) => Module.CallJsonAsync<SpatialItem<T>[]>(Handle, "Search", [bounds]);
     public ValueTask<bool> CollidesAsync(Envelope bounds) => Module.CallAsync<bool>(Handle, "Collides", [bounds]);
-    public ValueTask<SpatialItem<T>[]> KnnAsync(int count, double x, double y, double? maxDistance = null, object? predicate = null) => Module.CallAsync<SpatialItem<T>[]>(Handle, "Knn", [count, x, y, maxDistance, predicate]);
+    public ValueTask<SpatialItem<T>[]> KnnAsync(int count, double x, double y, double? maxDistance = null, object? predicate = null) => Module.CallJsonAsync<SpatialItem<T>[]>(Handle, "Knn", [count, x, y, maxDistance, predicate]);
     public ValueTask<SpatialStatistics> GetStatsAsync() => Module.CallAsync<SpatialStatistics>(Handle, "GetStats");
     public ValueTask ValidateAsync() => Module.CallVoidAsync(Handle, "Validate");
     public ValueTask ClearAsync() => Module.CallVoidAsync(Handle, "Clear");
-    public ValueTask<string> ExportAsync() => Module.CallAsync<string>(Handle, "Export");
+    public ValueTask<string> ExportAsync() => Module.CallJsonAsync<string>(Handle, "Export");
     public ValueTask ImportAsync(string snapshot) => Module.CallVoidAsync(Handle, "Import", [snapshot]);
     public async ValueTask DisposeAsync()
     {
