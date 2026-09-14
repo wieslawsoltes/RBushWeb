@@ -1,10 +1,10 @@
-# RBushWeb.Blazor 0.2.0
+# RBushWeb.Blazor 0.2.1
 
-- .NET 8/.NET 10 native R-tree wrapper, typed stable-ID services, provider and Razor query component.
-- Full streamed query/KNN/snapshot results and safe literal DTO input.
-- Snapshot import now restores the saved branching factor and validates atomically; regression tests cover invalid snapshots and duplicate input.
-- Native function references, shared scoped templates and lifecycle support.
-- Actual-package WebAssembly/Server samples and native-query/stream/template/remount validation.
-- Root and Blazor documentation, independent NuGet publication, public payload verification and runnable release samples.
+Updates the pinned shared runtime to tested Dockyard revision `1c895b7184451071e1c7131063249d2d9eb145b9`, retaining a self-contained NuGet package.
 
-Native engine and hosting constraints remain applicable. Generic interop complements the typed API; synchronous engine callbacks execute in the browser.
+- Preserve cyclic/deep native arguments, shared callback identity and callable property/method/disposal access.
+- Await concurrent native/module/subscription cleanup and asynchronous unsubscribe, continuing cleanup after individual failures.
+- Honor initialization-wait cancellation independently for each caller and prevent late native work after disposal.
+- Add `CallFunctionJsonAsync<T>` for complete streamed callable results and expanded JavaScript/managed regressions.
+
+Typed stable-ID spatial services, bulk/intersection/KNN queries, snapshots and Razor provider/query components remain available. .NET 8/.NET 10 actual-package WebAssembly/Server tests validate native queries, snapshot integrity, streaming and Razor callbacks before publication. Downloaded public NuGet payloads are verified before release creation. Native engine/browser contracts are unchanged.
