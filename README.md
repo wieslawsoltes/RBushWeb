@@ -19,7 +19,7 @@ The [complete JavaScript guide](README.web.md) preserves API examples, architect
 ## Blazor
 
 ```sh
-dotnet add package RBushWeb.Blazor --version 0.2.1
+dotnet add package RBushWeb.Blazor --version 0.2.2
 ```
 
 The .NET 8/.NET 10 package wraps the real browser R-tree, with `SpatialIndex<T>`, stable string identities, bulk operations, intersection and nearest-neighbor queries, snapshots, `SpatialProvider` and Razor-templated `SpatialQuery<TItem>`. JavaScript assets are local; NuGet consumers need neither npm nor a CDN.

@@ -1,6 +1,6 @@
 # RBushWeb.Blazor
 
-Install `RBushWeb.Blazor` 0.2.1 for .NET 8/.NET 10. The native R-tree browser engine is included as local static assets for interactive WebAssembly and Server.
+Install `RBushWeb.Blazor` 0.2.2 for .NET 8/.NET 10. The native R-tree browser engine is included as local static assets for interactive WebAssembly and Server.
 
 ## Typed spatial services
 
@@ -19,3 +19,7 @@ The service supports bulk loading, replacement, intersection search, collision c
 Increment `Revision` after mutating the index so a query component refreshes. Query results are DTO copies; edits must be committed through the service. The [sample](sample/Demo.razor) validates native queries against brute force, nearest-neighbor identity, deletion and snapshot restore.
 
 Full native APIs are available through `Module`/`Handle`, including returned function references and synchronous browser callback descriptors. Read [INTEGRATION.md](INTEGRATION.md) for hosting, ownership and publishing. Typed helpers complement native API access; underlying engine compatibility limits still apply.
+
+## Lifecycle in 0.2.2
+
+The shared runtime fixes concurrent visual cleanup, callbacks queued before removal, late template imports/root creation and retained cleanup failures. Native Razor factories now return awaitable teardown, coalesce parameter updates and retain roots during synchronous movement. Shared JavaScript/managed regressions and package-restored movement/update/recreation tests run in both sample hosts alongside spatial tests.
